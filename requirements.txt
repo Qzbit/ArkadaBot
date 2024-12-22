@@ -1,0 +1,17 @@
+# Telegram API
+pyTelegramBotAPI==4.8.0
+
+# Flask (опционально)
+Flask==2.2.3
+
+# Работа с базой данных
+SQLAlchemy>=2.0.0
+
+# Работа с изображениями
+pillow>=10.0.0
+
+# aiohttp (указание стабильной версии)
+aiohttp
+
+# Логирование
+logging
