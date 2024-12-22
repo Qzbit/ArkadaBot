@@ -1,8 +1,7 @@
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from templates.messages import WELCOME_MESSAGE
-from handlers.star_pythagoras_handler import handle_star_pythagoras
-import logging
 from calculators.calculator_utils import get_description
+import logging
 
 # Настройка логирования
 logger = logging.getLogger(__name__)
@@ -63,9 +62,9 @@ def register_handlers(bot):
         """Обрабатывает ввод для Звезды Пифагора и генерирует изображение."""
         try:
             birth_date = message.text.strip()
-            # Передача даты в обработчик
+            from handlers.star_pythagoras_handler import handle_star_pythagoras
             image_path = handle_star_pythagoras(birth_date)
-            
+
             if image_path:
                 with open(image_path, 'rb') as image:
                     bot.send_photo(
@@ -91,6 +90,7 @@ def register_handlers(bot):
         """Обрабатывает дату для расчета числа личного дня."""
         try:
             birth_date = message.text.strip()
+            from calculators.personal_day import calculate_personal_day
             day, month, year = map(int, birth_date.split('.'))
             result = calculate_personal_day(day, month, year)
             description = get_description("personal_day", result)
@@ -99,4 +99,51 @@ def register_handlers(bot):
             bot.send_message(message.chat.id, "Ошибка! Убедитесь, что дата введена в формате ДД.ММ.ГГГГ.")
         except Exception as e:
             logger.error(f"Ошибка при расчете числа личного дня: {e}")
+            bot.send_message(message.chat.id, "Произошла ошибка. Попробуйте позже.")
+
+    @bot.callback_query_handler(func=lambda call: call.data == "arcanum")
+    def handle_arcanum(call):
+        """Обрабатывает расчет числа аркана."""
+        bot.send_message(call.message.chat.id, "Введите вашу дату рождения в формате ДД.ММ.ГГГГ:")
+        bot.register_next_step_handler(call.message, process_arcanum)
+
+    def process_arcanum(message):
+        """Обрабатывает дату для расчета числа аркана."""
+        try:
+            birth_date = message.text.strip()
+            from calculators.arcanum_number import calculate_arcanum
+            day, month, year = map(int, birth_date.split('.'))
+            result = calculate_arcanum(day, month, year)
+            description = get_description("arcanum", result)
+            bot.send_message(message.chat.id, f"Ваше Число аркана: {result}\n\n{description}")
+        except ValueError:
+            bot.send_message(message.chat.id, "Ошибка! Убедитесь, что дата введена в формате ДД.ММ.ГГГГ.")
+        except Exception as e:
+            logger.error(f"Ошибка при расчете числа аркана: {e}")
+            bot.send_message(message.chat.id, "Произошла ошибка. Попробуйте позже.")
+
+    @bot.callback_query_handler(func=lambda call: call.data == "wealth")
+    def handle_wealth(call):
+        """Обрабатывает расчет числа богатства."""
+        bot.send_message(call.message.chat.id, "Введите ваше имя и дату рождения в формате: Имя ДД.ММ.ГГГГ:")
+        bot.register_next_step_handler(call.message, process_wealth)
+
+    def process_wealth(message):
+        """Обрабатывает имя и дату для расчета числа богатства."""
+        try:
+            data = message.text.strip().split()
+            if len(data) != 2:
+                raise ValueError("Некорректный формат данных.")
+
+            name = data[0]
+            birth_date = data[1]
+            from calculators.wealth import calculate_wealth
+            day, month, year = map(int, birth_date.split('.'))
+            result = calculate_wealth(name, day, month, year)
+            description = get_description("wealth", result)
+            bot.send_message(message.chat.id, f"Ваше Число богатства: {result}\n\n{description}")
+        except ValueError:
+            bot.send_message(message.chat.id, "Ошибка! Убедитесь, что данные введены в формате: Имя ДД.ММ.ГГГГ.")
+        except Exception as e:
+            logger.error(f"Ошибка при расчете числа богатства: {e}")
             bot.send_message(message.chat.id, "Произошла ошибка. Попробуйте позже.")
