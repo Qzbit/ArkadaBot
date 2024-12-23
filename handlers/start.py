@@ -1,6 +1,6 @@
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from templates.messages import WELCOME_MESSAGE
-from calculators.calculator_utils import get_description
+from handlers.star_pythagoras_handler import handle_star_pythagoras
 import logging
 
 # Настройка логирования
@@ -62,9 +62,9 @@ def register_handlers(bot):
         """Обрабатывает ввод для Звезды Пифагора и генерирует изображение."""
         try:
             birth_date = message.text.strip()
-            from handlers.star_pythagoras_handler import handle_star_pythagoras
+            # Передача даты в обработчик
             image_path = handle_star_pythagoras(birth_date)
-
+            
             if image_path:
                 with open(image_path, 'rb') as image:
                     bot.send_photo(
@@ -80,70 +80,20 @@ def register_handlers(bot):
             logger.error(f"Ошибка генерации изображения: {e}")
             bot.send_message(message.chat.id, "Произошла ошибка при генерации. Попробуйте позже.")
 
-    @bot.callback_query_handler(func=lambda call: call.data == "personal_day")
-    def handle_personal_day(call):
-        """Обрабатывает расчет числа личного дня."""
-        bot.send_message(call.message.chat.id, "Введите вашу дату рождения в формате ДД.ММ.ГГГГ:")
-        bot.register_next_step_handler(call.message, process_personal_day)
+# Обработчик для генерации "Звезды Пифагора"
+def handle_star_pythagoras(birth_date):
+    """
+    Обработчик генерации изображения 'Звезда Пифагора'.
+    На вход принимает строку с датой рождения в формате 'ДД.ММ.ГГГГ'.
+    """
+    from calculators.star_pythagoras import calculate_star_pythagoras, generate_star_image
 
-    def process_personal_day(message):
-        """Обрабатывает дату для расчета числа личного дня."""
-        try:
-            birth_date = message.text.strip()
-            from calculators.personal_day import calculate_personal_day
-            day, month, year = map(int, birth_date.split('.'))
-            result = calculate_personal_day(day, month, year)
-            description = get_description("personal_day", result)
-            bot.send_message(message.chat.id, f"Ваше Число личного дня: {result}\n\n{description}")
-        except ValueError:
-            bot.send_message(message.chat.id, "Ошибка! Убедитесь, что дата введена в формате ДД.ММ.ГГГГ.")
-        except Exception as e:
-            logger.error(f"Ошибка при расчете числа личного дня: {e}")
-            bot.send_message(message.chat.id, "Произошла ошибка. Попробуйте позже.")
-
-    @bot.callback_query_handler(func=lambda call: call.data == "arcanum")
-    def handle_arcanum(call):
-        """Обрабатывает расчет числа аркана."""
-        bot.send_message(call.message.chat.id, "Введите вашу дату рождения в формате ДД.ММ.ГГГГ:")
-        bot.register_next_step_handler(call.message, process_arcanum)
-
-    def process_arcanum(message):
-        """Обрабатывает дату для расчета числа аркана."""
-        try:
-            birth_date = message.text.strip()
-            from calculators.arcanum_number import calculate_arcanum
-            day, month, year = map(int, birth_date.split('.'))
-            result = calculate_arcanum(day, month, year)
-            description = get_description("arcanum", result)
-            bot.send_message(message.chat.id, f"Ваше Число аркана: {result}\n\n{description}")
-        except ValueError:
-            bot.send_message(message.chat.id, "Ошибка! Убедитесь, что дата введена в формате ДД.ММ.ГГГГ.")
-        except Exception as e:
-            logger.error(f"Ошибка при расчете числа аркана: {e}")
-            bot.send_message(message.chat.id, "Произошла ошибка. Попробуйте позже.")
-
-    @bot.callback_query_handler(func=lambda call: call.data == "wealth")
-    def handle_wealth(call):
-        """Обрабатывает расчет числа богатства."""
-        bot.send_message(call.message.chat.id, "Введите ваше имя и дату рождения в формате: Имя ДД.ММ.ГГГГ:")
-        bot.register_next_step_handler(call.message, process_wealth)
-
-    def process_wealth(message):
-        """Обрабатывает имя и дату для расчета числа богатства."""
-        try:
-            data = message.text.strip().split()
-            if len(data) != 2:
-                raise ValueError("Некорректный формат данных.")
-
-            name = data[0]
-            birth_date = data[1]
-            from calculators.wealth import calculate_wealth
-            day, month, year = map(int, birth_date.split('.'))
-            result = calculate_wealth(name, day, month, year)
-            description = get_description("wealth", result)
-            bot.send_message(message.chat.id, f"Ваше Число богатства: {result}\n\n{description}")
-        except ValueError:
-            bot.send_message(message.chat.id, "Ошибка! Убедитесь, что данные введены в формате: Имя ДД.ММ.ГГГГ.")
-        except Exception as e:
-            logger.error(f"Ошибка при расчете числа богатства: {e}")
-            bot.send_message(message.chat.id, "Произошла ошибка. Попробуйте позже.")
+    try:
+        # Преобразуем дату в числа
+        day, month, year = map(int, birth_date.split("."))
+        results = calculate_star_pythagoras(day, month, year)
+        image_path = generate_star_image(results)  # Генерация изображения
+        return image_path
+    except Exception as e:
+        logger.error(f"Ошибка в 'handle_star_pythagoras': {e}")
+        return None
