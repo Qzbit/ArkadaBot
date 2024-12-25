@@ -1,1 +1,0 @@
-# Wealth Number calculation logic

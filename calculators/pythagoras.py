@@ -1,1 +1,0 @@
-# Pythagoras star calculation logic

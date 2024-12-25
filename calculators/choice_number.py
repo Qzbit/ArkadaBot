@@ -1,1 +1,0 @@
-# Choice Number calculation logic
